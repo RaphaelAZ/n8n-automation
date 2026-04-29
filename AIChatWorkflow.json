@@ -1,0 +1,208 @@
+{
+  "name": "AIChatWorkflow",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "6e260e08-5fed-4aa8-bbe7-19672c5e604a",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -496,
+        0
+      ],
+      "id": "37c986f4-afe4-4cf6-8c0b-0bdf8be16298",
+      "name": "Webhook",
+      "webhookId": "6e260e08-5fed-4aa8-bbe7-19672c5e604a"
+    },
+    {
+      "parameters": {
+        "respondWith": "allIncomingItems",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        272,
+        -144
+      ],
+      "id": "3a4f443f-d36b-43bb-90cd-a8da6698ad85",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "llama3.2:latest",
+          "mode": "list",
+          "cachedResultName": "llama3.2:latest"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "={{ $json.body.message }}"
+            }
+          ]
+        },
+        "options": {
+          "system": "Tu es responsable dans une pizzeria, tu vas t'occuper de prendre des réservations, des commandes, renseigne toi sur les horaires, etc..."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.ollama",
+      "typeVersion": 1,
+      "position": [
+        -80,
+        -64
+      ],
+      "id": "256925de-33c4-4adb-b010-5e7007e53c5f",
+      "name": "Message a model",
+      "credentials": {
+        "ollamaApi": {
+          "id": "CGWPIvT2eCZQnKC5",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "75e02047-73ce-4f90-8b59-839259e05205",
+              "leftValue": "={{ $json.body.message }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -320,
+        0
+      ],
+      "id": "d57c1953-64f8-4b61-a50a-9edde9f118f2",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "respondWith": "allIncomingItems",
+        "options": {
+          "responseCode": 400
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        -96,
+        160
+      ],
+      "id": "c131ebcd-30d7-43a0-994a-5eb732ec3b88",
+      "name": "Respond to Webhook1"
+    },
+    {
+      "parameters": {
+        "authentication": "webhook",
+        "content": "={{ $json.content }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.discord",
+      "typeVersion": 2,
+      "position": [
+        272,
+        0
+      ],
+      "id": "a7105b9a-e0b7-4b0f-911e-725e1832e8a1",
+      "name": "Discord",
+      "webhookId": "cdafe2e3-6820-4b47-bda4-c3dee7cd28c4",
+      "credentials": {
+        "discordWebhookApi": {
+          "id": "LF5F0lF1cPqvi12N",
+          "name": "Discord Webhook account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Discord",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond to Webhook1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Discord": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "3d2f1ac7-ed4b-4ce1-9d1a-06505c4f204d",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "ded620a39389850deacf9c111c6eb0577c2c1b01b40088b9cd637fabf24f2914"
+  },
+  "id": "03dJnunI85uMyVuG",
+  "tags": []
+}

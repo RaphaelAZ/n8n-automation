@@ -65,7 +65,7 @@
       "typeVersion": 1.1,
       "position": [
         896,
-        64
+        -64
       ],
       "id": "e9bccb70-e068-41f7-918f-dce255430c2f",
       "name": "Get row(s)"
@@ -80,7 +80,7 @@
       "typeVersion": 1.5,
       "position": [
         736,
-        64
+        -64
       ],
       "id": "f146c4a9-d9f7-4427-bc2a-70aeb5258914",
       "name": "SuccessPizza"
@@ -96,12 +96,53 @@
           },
           "conditions": [
             {
-              "id": "67db2b2e-b726-4d40-a856-5c0101f1bfa7",
-              "leftValue": "={{ $json.body.type }}",
-              "rightValue": "peperonni",
+              "id": "7a73053b-99bf-4b50-8351-9628fb9cc1c5",
+              "leftValue": "={{ $json.body.name }}",
+              "rightValue": "",
               "operator": {
                 "type": "string",
-                "operation": "equals"
+                "operation": "exists",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "9f82bb44-8f78-45ed-892f-197cb8219281",
+              "leftValue": "={{ $json.body.email }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "f9833a33-a598-49cc-86dc-a39fa2a228e3",
+              "leftValue": "={{ $json.body.message }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "97e311b1-66db-46c4-b006-e42b3aa19d4c",
+              "leftValue": "={{ $json.body.type }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "01367aa2-666c-4710-ac8b-d73e51c209df",
+              "leftValue": "={{ $json.body.source }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
               }
             }
           ],
@@ -121,16 +162,16 @@
     {
       "parameters": {
         "respondWith": "json",
-        "responseBody": "{\n  \"alert\": \"Nous ne vendons plus les pizzas avec peperonni\"\n}",
+        "responseBody": "{\n  \"alert\": \"L'un des champs est manquant\"\n}",
         "options": {
-          "responseCode": 200
+          "responseCode": 400
         }
       },
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.5,
       "position": [
         576,
-        -64
+        64
       ],
       "id": "2889e280-a327-4e13-819b-8f8054ae5792",
       "name": "InvalidPizza"
@@ -236,7 +277,7 @@
       "typeVersion": 1.1,
       "position": [
         576,
-        64
+        -64
       ],
       "id": "7f7debd7-3e2a-4ea7-94ba-dd6023312123",
       "name": "Insert row"
@@ -270,14 +311,14 @@
       "main": [
         [
           {
-            "node": "InvalidPizza",
+            "node": "Insert row",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "Insert row",
+            "node": "InvalidPizza",
             "type": "main",
             "index": 0
           }
@@ -324,7 +365,7 @@
     "binaryMode": "separate",
     "availableInMCP": false
   },
-  "versionId": "5f76c172-b8f1-4060-b81d-f90cfb404df0",
+  "versionId": "444a5184-4f47-40f2-9b2c-d2a0202e8673",
   "meta": {
     "instanceId": "ded620a39389850deacf9c111c6eb0577c2c1b01b40088b9cd637fabf24f2914"
   },

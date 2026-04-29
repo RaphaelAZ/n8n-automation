@@ -1,0 +1,184 @@
+{
+  "name": "TimeStampWorkflow",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -288,
+        -16
+      ],
+      "id": "0353ffae-4716-45d8-a8e3-89d3b439b399",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [\n  { json: { name: \"Alice\", age: \"18\" }},\n  { json: { name: \"Bob\", age: \"10\" }},\n  { json: { name: \"Pierre\", age: \"35\" }},\n  { json: { name: \"Toto\", age: \"68\" }},\n  { json: { name: \"Louise\", age: \"17\" }},\n  { json: { name: \"Eve\", age: \"24\" }},\n]"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -80,
+        -16
+      ],
+      "id": "d0ec0417-18f4-40cd-b1bd-18db507a124a",
+      "name": "Mocks"
+    },
+    {
+      "parameters": {
+        "jsCode": "return $('Mocks').all().map((item) => {\n  item.json.isAdult = Number(item.json.age) >= 18;\n  return item;\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        128,
+        -16
+      ],
+      "id": "758e1666-f767-4efb-8058-325537a04766",
+      "name": "isAdult"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "name",
+        "include": "allOtherFields",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        336,
+        -16
+      ],
+      "id": "c00f02fa-4856-42de-b35f-aab42115fc10",
+      "name": "Split Out"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "fieldsToMatchString": "name",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        784,
+        -16
+      ],
+      "id": "82cf5651-96b6-422d-96e3-c9d761fe8e0e",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "jsCode": "return $('Split Out').all().map((item) => {\n  item.json.first_timestamp = Date.now();\n  return item;\n})"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        576,
+        -112
+      ],
+      "id": "fd053b50-9f2b-4d78-bdd1-e4de53c74497",
+      "name": "FirstTimestamp"
+    },
+    {
+      "parameters": {
+        "jsCode": "return $('Split Out').all().map((item) => {\n  item.json.second_timestamp = Date.now();\n  return item;\n})"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        576,
+        80
+      ],
+      "id": "beb20fdf-5ee3-4d66-ae4d-0439c64ac556",
+      "name": "SecondTimestamp"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Mocks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mocks": {
+      "main": [
+        [
+          {
+            "node": "isAdult",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "isAdult": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "FirstTimestamp",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "SecondTimestamp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FirstTimestamp": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SecondTimestamp": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "c959034d-0cc1-4b5e-9c6f-74c843ee8533",
+  "meta": {
+    "instanceId": "ded620a39389850deacf9c111c6eb0577c2c1b01b40088b9cd637fabf24f2914"
+  },
+  "id": "7O6Xt9BclJXhUYXf",
+  "tags": []
+}

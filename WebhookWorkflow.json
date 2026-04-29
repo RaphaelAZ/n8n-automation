@@ -1,0 +1,333 @@
+{
+  "name": "WebhookWorkflow",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "check-age",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        208,
+        0
+      ],
+      "id": "e8dcb81c-5408-474c-bcb3-c456c60740fd",
+      "name": "Webhook",
+      "webhookId": "ffe94aa4-0003-44f0-af62-ba825d372653"
+    },
+    {
+      "parameters": {
+        "resource": "table",
+        "operation": "create",
+        "tableName": "Pizza",
+        "columns": {
+          "column": [
+            {
+              "name": "name"
+            },
+            {
+              "name": "type"
+            },
+            {
+              "name": "source"
+            },
+            {
+              "name": "client_name"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        672,
+        -272
+      ],
+      "id": "9df1d532-0dbe-4f0a-a157-3812879c0070",
+      "name": "PizzaTable"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "Tab2UPOtEnJA3wtp",
+          "mode": "list",
+          "cachedResultName": "Pizza",
+          "cachedResultUrl": "/projects/2DD2cQHJkRfQ5GSL/datatables/Tab2UPOtEnJA3wtp"
+        }
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        896,
+        64
+      ],
+      "id": "e9bccb70-e068-41f7-918f-dce255430c2f",
+      "name": "Get row(s)"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\n  \"lieu\": \"la pizza sera livré devant le parking sur \",\n  \"heure\": \"05:30:00\",\n  \"pizzaAge\": 8\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        736,
+        64
+      ],
+      "id": "f146c4a9-d9f7-4427-bc2a-70aeb5258914",
+      "name": "SuccessPizza"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "67db2b2e-b726-4d40-a856-5c0101f1bfa7",
+              "leftValue": "={{ $json.body.type }}",
+              "rightValue": "peperonni",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        368,
+        0
+      ],
+      "id": "486ce708-63d7-45b7-8eaa-dba28ba39c58",
+      "name": "CheckPizza"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\n  \"alert\": \"Nous ne vendons plus les pizzas avec peperonni\"\n}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        576,
+        -64
+      ],
+      "id": "2889e280-a327-4e13-819b-8f8054ae5792",
+      "name": "InvalidPizza"
+    },
+    {
+      "parameters": {
+        "resource": "table",
+        "operation": "delete",
+        "dataTableId": {
+          "__rl": true,
+          "value": "dQN4iQkjlxcBt9fr",
+          "mode": "list",
+          "cachedResultName": "Pizza",
+          "cachedResultUrl": "/projects/2DD2cQHJkRfQ5GSL/datatables/dQN4iQkjlxcBt9fr"
+        }
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        464,
+        -272
+      ],
+      "id": "0d6cdabb-1e1b-4293-96d4-917f8101fb85",
+      "name": "Delete a data table"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        256,
+        -272
+      ],
+      "id": "18e5e672-d24c-4910-b525-340c4c20cc34",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "value": "Tab2UPOtEnJA3wtp",
+          "mode": "list",
+          "cachedResultName": "Pizza",
+          "cachedResultUrl": "/projects/2DD2cQHJkRfQ5GSL/datatables/Tab2UPOtEnJA3wtp"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "name": "={{ $json.body.message }}",
+            "client_name": "={{ $json.body.name }}",
+            "type": "={{ $json.body.type }}",
+            "source": "={{ $json.body.source }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "type",
+              "displayName": "type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "source",
+              "displayName": "source",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "client_name",
+              "displayName": "client_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        576,
+        64
+      ],
+      "id": "7f7debd7-3e2a-4ea7-94ba-dd6023312123",
+      "name": "Insert row"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "CheckPizza",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SuccessPizza": {
+      "main": [
+        [
+          {
+            "node": "Get row(s)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CheckPizza": {
+      "main": [
+        [
+          {
+            "node": "InvalidPizza",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Insert row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete a data table": {
+      "main": [
+        [
+          {
+            "node": "PizzaTable",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Delete a data table",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert row": {
+      "main": [
+        [
+          {
+            "node": "SuccessPizza",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "5f76c172-b8f1-4060-b81d-f90cfb404df0",
+  "meta": {
+    "instanceId": "ded620a39389850deacf9c111c6eb0577c2c1b01b40088b9cd637fabf24f2914"
+  },
+  "id": "4uiNBNIN10PsVGyV",
+  "tags": []
+}

@@ -1,0 +1,199 @@
+{
+  "name": "AIPostgresRequestWorkflow",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        -352,
+        -64
+      ],
+      "id": "813a84a4-a0ce-4c55-a6ff-5bbcaa8c4dfc",
+      "name": "When chat message received",
+      "webhookId": "422e3fd4-49ff-424e-9d3c-afc31bfce175"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a8b40de0-7f5a-4e31-9db7-07de843f1a7c",
+              "name": "chatInput",
+              "value": "={{ $json.chatInput }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -192,
+        -64
+      ],
+      "id": "cb1b3844-31f1-4706-8827-7bc61852433e",
+      "name": "Select chat input"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Database Schema Context: \nDatabase schema:  Table: categories Columns: - id integer primary key - name text unique not null  Table: products Columns: - id integer primary key - name text not null - sku text unique not null - category_id integer references categories(id) - unit_price numeric(10,2) not null - active boolean default true  Table: customers Columns: - id integer primary key - full_name text not null - email text unique not null - country text not null  Table: orders Columns: - id integer primary key - customer_id integer references customers(id) - created_at timestamp not null - status text not null Allowed status values:   pending, paid, completed, shipped, cancelled, refunded  Table: order_items Columns: - id integer primary key - order_id integer references orders(id) - product_id integer references products(id) - quantity integer not null - unit_price numeric(10,2) not null  Relationships: - products.category_id = categories.id - orders.customer_id = customers.id - order_items.order_id = orders.id - order_items.product_id = products.id.\n\nNow : {{ $json.chatInput }}",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "Only respond with 1 sql query, nothing else not even a message and no formatting for display"
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        -32,
+        -64
+      ],
+      "id": "eb1d158d-af2e-4a73-a2ac-fb6708c4117b",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "model": "llama3.2:latest",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        -32,
+        80
+      ],
+      "id": "a04310c9-4a14-400c-971d-3dda682f06ac",
+      "name": "Ollama Chat Model",
+      "credentials": {
+        "ollamaApi": {
+          "id": "CGWPIvT2eCZQnKC5",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f3cf2ee5-2049-4ccd-92d5-efedfd8be115",
+              "name": "sqlRequest",
+              "value": "={{ $json.text }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        288,
+        -64
+      ],
+      "id": "dc36659a-67dc-4653-bd49-47708a579f6b",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "{{ $json.sqlRequest }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        480,
+        -64
+      ],
+      "id": "4f70f6a1-dc40-414d-99cc-a8883991de17",
+      "name": "Execute a SQL query",
+      "credentials": {
+        "postgres": {
+          "id": "nCKCLzAgVhr7zLXN",
+          "name": "Postgres account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "Select chat input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Select chat input": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Execute a SQL query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "4e44e6b1-806f-4f50-ae61-9d65f49b726b",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "ded620a39389850deacf9c111c6eb0577c2c1b01b40088b9cd637fabf24f2914"
+  },
+  "id": "STy6tELZlH9HU2JI",
+  "tags": []
+}

@@ -6,10 +6,10 @@
       "type": "n8n-nodes-base.manualTrigger",
       "typeVersion": 1,
       "position": [
-        -1216,
-        128
+        0,
+        0
       ],
-      "id": "90b5641b-8b0c-4608-b491-70147484a48a",
+      "id": "9199089f-10bf-4b03-8c5c-e627a1833d0e",
       "name": "When clicking ‘Execute workflow’"
     },
     {
@@ -20,11 +20,11 @@
       "type": "n8n-nodes-base.readWriteFile",
       "typeVersion": 1.1,
       "position": [
-        -992,
-        128
+        208,
+        0
       ],
-      "id": "166e2cd1-ad30-429a-91be-3f244cd14444",
-      "name": "Read PDFs"
+      "id": "59bb757b-4f2f-4c89-beec-022e38d82b0e",
+      "name": "Read/Write Files from Disk"
     },
     {
       "parameters": {
@@ -34,32 +34,26 @@
       "type": "n8n-nodes-base.extractFromFile",
       "typeVersion": 1.1,
       "position": [
-        -768,
-        128
+        416,
+        0
       ],
-      "id": "91151289-eeb4-4230-a645-520a13924f88",
-      "name": "Extract PDFs' text"
+      "id": "b23bcf5f-f39f-4a65-9f5a-38494118bcfc",
+      "name": "Extract from File"
     },
     {
       "parameters": {
         "assignments": {
           "assignments": [
             {
-              "id": "285cd24e-9bab-400a-8f76-3e9630b44c4a",
+              "id": "7cf5f55e-75e8-4a3b-97d6-1a3bd76e486f",
               "name": "text",
               "value": "={{ $json.text }}",
               "type": "string"
             },
             {
-              "id": "e3a4fe6f-264d-4e00-a8df-51320b2bb231",
-              "name": "info",
-              "value": "={{ $json.info }}",
-              "type": "object"
-            },
-            {
-              "id": "9b6dae3a-aaf3-4776-92d2-8aff6d2feec5",
-              "name": "source",
-              "value": "={{ $('Read PDFs').item.json.fileName }}",
+              "id": "d516b4b6-e45f-41a3-97ea-3229a48fc682",
+              "name": "fileName",
+              "value": "={{ $('Read/Write Files from Disk').item.json.fileName }}",
               "type": "string"
             }
           ]
@@ -69,24 +63,37 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        -544,
-        128
+        624,
+        0
       ],
-      "id": "95715a11-8b40-4782-bf2d-411e41810bbe",
-      "name": "Extract text and infos from PDFs"
+      "id": "15bbc0ec-7f99-4841-8308-76e44b25adde",
+      "name": "Edit Fields"
     },
     {
       "parameters": {
-        "jsCode": "function chunkText(text, target = 768, tolerance = 200) {\n  const chunks = [];\n  let pos = 0;\n  const len = text.length;\n \n  const minSize = Math.max(1, target - tolerance);\n  const maxSize = target + tolerance;\n \n  while (pos < len) {\n    const remaining = len - pos;\n \n    // If what's left fits within maxSize, just take it all.\n    if (remaining <= maxSize) {\n      chunks.push(text.slice(pos).trim());\n      break;\n    }\n \n    // Search window for a good split point: [pos+minSize, pos+maxSize]\n    const windowStart = pos + minSize;\n    const windowEnd = Math.min(pos + maxSize, len);\n \n    let splitIndex = -1;\n \n    // Prefer the last newline within the window\n    let lastNewline = text.lastIndexOf('\\n', windowEnd - 1);\n    if (lastNewline >= windowStart) {\n      splitIndex = lastNewline + 1; // include the newline in the current chunk\n    }\n \n    // Otherwise, try the last dot within the window\n    if (splitIndex === -1) {\n      let lastDot = text.lastIndexOf('.', windowEnd - 1);\n      if (lastDot >= windowStart) {\n        splitIndex = lastDot + 1; // include the dot\n      }\n    }\n \n    // Fallback: no newline/dot found in window -> hard cut at target\n    if (splitIndex === -1) {\n      splitIndex = pos + target;\n    }\n \n    chunks.push(text.slice(pos, splitIndex).trim());\n    pos = splitIndex;\n \n    // Skip leading whitespace/newlines for the next chunk\n    while (pos < len && /\\s/.test(text[pos])) {\n      pos++;\n    }\n  }\n \n  return chunks.filter(c => c.length > 0);\n}\n\nconst targetText = $input.first().json.text;\nconst chunksSize = 768;\nconst tolerance = 200;\n\nconst chunks = chunkText(targetText, chunksSize, tolerance);\nconst chunksLenght = chunks.length\n\nreturn [\n  {\n    ...$input.first().json,\n    text: undefined,\n    chunks: chunks.map((currentChunk, index) => ({\n      json: {\n        chunk: currentChunk,\n        source: $input.first().json.source,\n        chunkIndex: index,\n        totalChunks: chunksLenght,\n        sourceLength: targetText.length\n      }\n    }))\n  }\n]"
+        "jsCode": "function chunkText(text, target = 768, tolerance = 200) {\n  const chunks = [];\n  let pos = 0;\n\n  const minSize = target - tolerance;\n  const maxSize = target + tolerance;\n\n  while (pos < text.length) {\n\n    if (text.length - pos <= maxSize) {\n      chunks.push(text.slice(pos).trim());\n      break;\n    }\n\n    const start = pos + minSize;\n    const end = pos + maxSize;\n\n    let split = text.lastIndexOf(\"\\n\", end);\n\n    if (split < start) {\n      split = text.lastIndexOf(\".\", end);\n    }\n\n    if (split < start) {\n      split = pos + target;\n    }\n\n    chunks.push(text.slice(pos, split).trim());\n\n    pos = split;\n\n    while (/\\s/.test(text[pos])) {\n      pos++;\n    }\n  }\n\n  return chunks;\n}\n\n\nconst text = $input.first().json.text;\n\nconst chunks = chunkText(text);\n\nreturn chunks.map((chunk,index)=>({\n  json:{\n    chunk,\n    source:$json.fileName,\n    chunkIndex:index,\n    totalChunks:chunks.length\n  }\n}));"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -320,
-        128
+        1040,
+        0
       ],
-      "id": "af3f7c75-7f96-4758-9f95-91aa07205f0b",
-      "name": "Split PDFs' text into chunks"
+      "id": "968f7897-0095-41d2-b471-5749c774dae9",
+      "name": "Chunks"
+    },
+    {
+      "parameters": {
+        "jsCode": "\n\nreturn {text: $input.first().json.text.replace(/[\\n\\r\\t]/g, ''), source:$input.first().json.fileName };"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        832,
+        0
+      ],
+      "id": "308c5770-3ddc-4dff-bc6d-9934e2887c8d",
+      "name": "Clean Text"
     },
     {
       "parameters": {
@@ -96,12 +103,12 @@
         "bodyParameters": {
           "parameters": [
             {
-              "name": "prompt",
-              "value": "=JSON.parse(JSON.stringify({{ $json.chunks }}))"
-            },
-            {
               "name": "model",
               "value": "nomic-embed-text"
+            },
+            {
+              "name": "prompt",
+              "value": "={{ $json.chunk }}"
             }
           ]
         },
@@ -110,36 +117,63 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        0,
-        0
+        1232,
+        -128
       ],
-      "id": "d16ca4fa-6e16-4df0-8a91-254c334d756b",
-      "name": "Create Embedding",
-      "notes": "400 Bad request - please check your parameters\njson: cannot unmarshal array into Go struct field EmbeddingRequest.prompt of type string\n\nhuh"
-    },
-    {
-      "parameters": {},
-      "type": "n8n-nodes-base.merge",
-      "typeVersion": 3.2,
-      "position": [
-        320,
-        112
-      ],
-      "id": "2d55489f-b64d-4887-8008-2a051193ad65",
-      "name": "Merge"
+      "id": "7640d4fe-f1b1-4052-a4cb-5e833435e098",
+      "name": "Create Embedding"
     },
     {
       "parameters": {
+        "jsCode": "return [\n  {\n    json:{\n      points: items.map((item,i)=>({\n        id: Date.now()+i,\n        vector:item.json.embedding,\n        payload:{\n          text:item.json.chunk,\n          source:item.json.source,\n          chunk_index:item.json.chunkIndex,\n          total_chunks:item.json.totalChunks\n        }\n      }))\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1600,
+        -16
+      ],
+      "id": "fe5326e7-6427-47ec-9fa1-de2ba914119d",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "http://qdrant:6333/collections/internal_docs/points",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "points",
+              "value": "={{$json.points}}"
+            }
+          ]
+        },
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        528,
-        112
+        1760,
+        -16
       ],
-      "id": "a9ee9c26-6e81-4315-9f33-c84069051e66",
+      "id": "10f44dc2-04ba-4151-aa66-9954f4830ec2",
       "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1424,
+        -16
+      ],
+      "id": "30fc8713-a3d2-4ccb-a1ed-0dd394cf4cf2",
+      "name": "Merge"
     }
   ],
   "pinData": {},
@@ -148,47 +182,58 @@
       "main": [
         [
           {
-            "node": "Read PDFs",
+            "node": "Read/Write Files from Disk",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Read PDFs": {
+    "Read/Write Files from Disk": {
       "main": [
         [
           {
-            "node": "Extract PDFs' text",
+            "node": "Extract from File",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Extract PDFs' text": {
+    "Extract from File": {
       "main": [
         [
           {
-            "node": "Extract text and infos from PDFs",
+            "node": "Edit Fields",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Extract text and infos from PDFs": {
+    "Edit Fields": {
       "main": [
         [
           {
-            "node": "Split PDFs' text into chunks",
+            "node": "Clean Text",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Split PDFs' text into chunks": {
+    "Clean Text": {
+      "main": [
+        [
+          {
+            "node": "Chunks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chunks": {
       "main": [
         [
           {
@@ -215,11 +260,22 @@
         ]
       ]
     },
-    "Merge": {
+    "Code in JavaScript": {
       "main": [
         [
           {
             "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
             "type": "main",
             "index": 0
           }
@@ -233,10 +289,10 @@
     "binaryMode": "separate",
     "availableInMCP": false
   },
-  "versionId": "1ea3d5d5-74c1-455a-85be-8428e889430f",
+  "versionId": "877f3448-78df-4253-8098-e430ae49b8c8",
   "meta": {
     "instanceId": "ded620a39389850deacf9c111c6eb0577c2c1b01b40088b9cd637fabf24f2914"
   },
-  "id": "FVQpo2QOwTADSR0T",
+  "id": "ln3V15tdxg4q5mvt",
   "tags": []
 }

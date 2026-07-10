@@ -1,0 +1,242 @@
+{
+  "name": "RAGWorkflow",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1216,
+        128
+      ],
+      "id": "90b5641b-8b0c-4608-b491-70147484a48a",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "fileSelector": "/home/node/.n8n-files/documents/**.pdf",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1.1,
+      "position": [
+        -992,
+        128
+      ],
+      "id": "166e2cd1-ad30-429a-91be-3f244cd14444",
+      "name": "Read PDFs"
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        -768,
+        128
+      ],
+      "id": "91151289-eeb4-4230-a645-520a13924f88",
+      "name": "Extract PDFs' text"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "285cd24e-9bab-400a-8f76-3e9630b44c4a",
+              "name": "text",
+              "value": "={{ $json.text }}",
+              "type": "string"
+            },
+            {
+              "id": "e3a4fe6f-264d-4e00-a8df-51320b2bb231",
+              "name": "info",
+              "value": "={{ $json.info }}",
+              "type": "object"
+            },
+            {
+              "id": "9b6dae3a-aaf3-4776-92d2-8aff6d2feec5",
+              "name": "source",
+              "value": "={{ $('Read PDFs').item.json.fileName }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -544,
+        128
+      ],
+      "id": "95715a11-8b40-4782-bf2d-411e41810bbe",
+      "name": "Extract text and infos from PDFs"
+    },
+    {
+      "parameters": {
+        "jsCode": "function chunkText(text, target = 768, tolerance = 200) {\n  const chunks = [];\n  let pos = 0;\n  const len = text.length;\n \n  const minSize = Math.max(1, target - tolerance);\n  const maxSize = target + tolerance;\n \n  while (pos < len) {\n    const remaining = len - pos;\n \n    // If what's left fits within maxSize, just take it all.\n    if (remaining <= maxSize) {\n      chunks.push(text.slice(pos).trim());\n      break;\n    }\n \n    // Search window for a good split point: [pos+minSize, pos+maxSize]\n    const windowStart = pos + minSize;\n    const windowEnd = Math.min(pos + maxSize, len);\n \n    let splitIndex = -1;\n \n    // Prefer the last newline within the window\n    let lastNewline = text.lastIndexOf('\\n', windowEnd - 1);\n    if (lastNewline >= windowStart) {\n      splitIndex = lastNewline + 1; // include the newline in the current chunk\n    }\n \n    // Otherwise, try the last dot within the window\n    if (splitIndex === -1) {\n      let lastDot = text.lastIndexOf('.', windowEnd - 1);\n      if (lastDot >= windowStart) {\n        splitIndex = lastDot + 1; // include the dot\n      }\n    }\n \n    // Fallback: no newline/dot found in window -> hard cut at target\n    if (splitIndex === -1) {\n      splitIndex = pos + target;\n    }\n \n    chunks.push(text.slice(pos, splitIndex).trim());\n    pos = splitIndex;\n \n    // Skip leading whitespace/newlines for the next chunk\n    while (pos < len && /\\s/.test(text[pos])) {\n      pos++;\n    }\n  }\n \n  return chunks.filter(c => c.length > 0);\n}\n\nconst targetText = $input.first().json.text;\nconst chunksSize = 768;\nconst tolerance = 200;\n\nconst chunks = chunkText(targetText, chunksSize, tolerance);\nconst chunksLenght = chunks.length\n\nreturn [\n  {\n    ...$input.first().json,\n    text: undefined,\n    chunks: chunks.map((currentChunk, index) => ({\n      json: {\n        chunk: currentChunk,\n        source: $input.first().json.source,\n        chunkIndex: index,\n        totalChunks: chunksLenght,\n        sourceLength: targetText.length\n      }\n    }))\n  }\n]"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -320,
+        128
+      ],
+      "id": "af3f7c75-7f96-4758-9f95-91aa07205f0b",
+      "name": "Split PDFs' text into chunks"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://ollama:11434/api/embeddings",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "prompt",
+              "value": "=JSON.parse(JSON.stringify({{ $json.chunks }}))"
+            },
+            {
+              "name": "model",
+              "value": "nomic-embed-text"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        0,
+        0
+      ],
+      "id": "d16ca4fa-6e16-4df0-8a91-254c334d756b",
+      "name": "Create Embedding",
+      "notes": "400 Bad request - please check your parameters\njson: cannot unmarshal array into Go struct field EmbeddingRequest.prompt of type string\n\nhuh"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        320,
+        112
+      ],
+      "id": "2d55489f-b64d-4887-8008-2a051193ad65",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        528,
+        112
+      ],
+      "id": "a9ee9c26-6e81-4315-9f33-c84069051e66",
+      "name": "HTTP Request"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Read PDFs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read PDFs": {
+      "main": [
+        [
+          {
+            "node": "Extract PDFs' text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract PDFs' text": {
+      "main": [
+        [
+          {
+            "node": "Extract text and infos from PDFs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract text and infos from PDFs": {
+      "main": [
+        [
+          {
+            "node": "Split PDFs' text into chunks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split PDFs' text into chunks": {
+      "main": [
+        [
+          {
+            "node": "Create Embedding",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Create Embedding": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "1ea3d5d5-74c1-455a-85be-8428e889430f",
+  "meta": {
+    "instanceId": "ded620a39389850deacf9c111c6eb0577c2c1b01b40088b9cd637fabf24f2914"
+  },
+  "id": "FVQpo2QOwTADSR0T",
+  "tags": []
+}
